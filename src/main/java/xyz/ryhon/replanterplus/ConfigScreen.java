@@ -1,21 +1,15 @@
 package xyz.ryhon.replanterplus;
 
 import java.util.function.Consumer;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ButtonTextures;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ButtonWidget.NarrationSupplier;
-import net.minecraft.client.gui.widget.PressableWidget;
-import net.minecraft.client.gui.widget.SliderWidget;
-import net.minecraft.client.gui.widget.TextWidget;
-import net.minecraft.client.input.AbstractInput;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractButton;
+import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.InputWithModifiers;
+import net.minecraft.network.chat.Component;
 
 public class ConfigScreen extends Screen {
 	Screen parent;
@@ -26,10 +20,10 @@ public class ConfigScreen extends Screen {
 	SwitchButton autoSwitchButton;
 	SwitchButton requireSeedHeldButton;
 	SimpleSlider tickDelaySlider;
-	ButtonWidget doneButton;
+	Button doneButton;
 
 	public ConfigScreen(Screen parent) {
-		super(Text.empty());
+		super(Component.empty());
 		this.parent = parent;
 	}
 
@@ -50,12 +44,12 @@ public class ConfigScreen extends Screen {
 				ReplanterPlus.enabled = toggled;
 			}
 		};
-		addDrawableChild(enabledButton);
-		addSelectableChild(enabledButton);
-		TextWidget t = new TextWidget(Text.translatable("replanter.configscreen.enabled"), textRenderer);
+		addRenderableWidget(enabledButton);
+		addWidget(enabledButton);
+		StringWidget t = new StringWidget(Component.translatable("replanter.configscreen.enabled"), font);
 		t.setPosition((width / 2) - (panelWidth / 2),
-				enabledButton.getY() + (buttonHeight / 2) - (textRenderer.fontHeight / 2));
-		addDrawableChild(t);
+				enabledButton.getY() + (buttonHeight / 2) - (font.lineHeight / 2));
+		addRenderableWidget(t);
 
 		sneakToggleButton = new SwitchButton(
 				enabledButton.getX(), enabledButton.getY() + enabledButton.getHeight(),
@@ -67,12 +61,12 @@ public class ConfigScreen extends Screen {
 				ReplanterPlus.sneakToggle = toggled;
 			}
 		};
-		addDrawableChild(sneakToggleButton);
-		addSelectableChild(sneakToggleButton);
-		t = new TextWidget(Text.translatable("replanter.configscreen.sneakToggle"), textRenderer);
+		addRenderableWidget(sneakToggleButton);
+		addWidget(sneakToggleButton);
+		t = new StringWidget(Component.translatable("replanter.configscreen.sneakToggle"), font);
 		t.setPosition((width / 2) - (panelWidth / 2),
-				sneakToggleButton.getY() + (buttonHeight / 2) - (textRenderer.fontHeight / 2));
-		addDrawableChild(t);
+				sneakToggleButton.getY() + (buttonHeight / 2) - (font.lineHeight / 2));
+		addRenderableWidget(t);
 
 		missingItemNotificationsButton = new SwitchButton(
 				sneakToggleButton.getX(), sneakToggleButton.getY() + sneakToggleButton.getHeight(),
@@ -84,12 +78,12 @@ public class ConfigScreen extends Screen {
 				ReplanterPlus.missingItemNotifications = toggled;
 			}
 		};
-		addDrawableChild(missingItemNotificationsButton);
-		addSelectableChild(missingItemNotificationsButton);
-		t = new TextWidget(Text.translatable("replanter.configscreen.missingItemNotifications"), textRenderer);
+		addRenderableWidget(missingItemNotificationsButton);
+		addWidget(missingItemNotificationsButton);
+		t = new StringWidget(Component.translatable("replanter.configscreen.missingItemNotifications"), font);
 		t.setPosition((width / 2) - (panelWidth / 2),
-				missingItemNotificationsButton.getY() + (buttonHeight / 2) - (textRenderer.fontHeight / 2));
-		addDrawableChild(t);
+				missingItemNotificationsButton.getY() + (buttonHeight / 2) - (font.lineHeight / 2));
+		addRenderableWidget(t);
 
 		autoSwitchButton = new SwitchButton(
 				missingItemNotificationsButton.getX(),
@@ -102,12 +96,12 @@ public class ConfigScreen extends Screen {
 				ReplanterPlus.autoSwitch = toggled;
 			}
 		};
-		addDrawableChild(autoSwitchButton);
-		addSelectableChild(autoSwitchButton);
-		t = new TextWidget(Text.translatable("replanter.configscreen.autoSwitch"), textRenderer);
+		addRenderableWidget(autoSwitchButton);
+		addWidget(autoSwitchButton);
+		t = new StringWidget(Component.translatable("replanter.configscreen.autoSwitch"), font);
 		t.setPosition((width / 2) - (panelWidth / 2),
-				autoSwitchButton.getY() + (buttonHeight / 2) - (textRenderer.fontHeight / 2));
-		addDrawableChild(t);
+				autoSwitchButton.getY() + (buttonHeight / 2) - (font.lineHeight / 2));
+		addRenderableWidget(t);
 
 		requireSeedHeldButton = new SwitchButton(
 				autoSwitchButton.getX(),
@@ -120,17 +114,17 @@ public class ConfigScreen extends Screen {
 				ReplanterPlus.requireSeedHeld = toggled;
 			}
 		};
-		addDrawableChild(requireSeedHeldButton);
-		addSelectableChild(requireSeedHeldButton);
-		t = new TextWidget(Text.translatable("replanter.configscreen.requireSeedHeld"), textRenderer);
+		addRenderableWidget(requireSeedHeldButton);
+		addWidget(requireSeedHeldButton);
+		t = new StringWidget(Component.translatable("replanter.configscreen.requireSeedHeld"), font);
 		t.setPosition((width / 2) - (panelWidth / 2),
-				requireSeedHeldButton.getY() + (buttonHeight / 2) - (textRenderer.fontHeight / 2));
-		addDrawableChild(t);
+				requireSeedHeldButton.getY() + (buttonHeight / 2) - (font.lineHeight / 2));
+		addRenderableWidget(t);
 
-		t = new TextWidget(Text.translatable("replanter.configscreen.tickDelay"), textRenderer);
+		t = new StringWidget(Component.translatable("replanter.configscreen.tickDelay"), font);
 		t.setPosition((width / 2) - (panelWidth / 2),
 				requireSeedHeldButton.getY() + buttonHeight);
-		addDrawableChild(t);
+		addRenderableWidget(t);
 
 		tickDelaySlider = new SimpleSlider(0, 8);
 		tickDelaySlider.setPosition(t.getX(), t.getY() + t.getHeight());
@@ -141,26 +135,26 @@ public class ConfigScreen extends Screen {
 			long i = l;
 			ReplanterPlus.useDelay = (int) i;
 		};
-		addDrawableChild(tickDelaySlider);
-		addSelectableChild(tickDelaySlider);
+		addRenderableWidget(tickDelaySlider);
+		addWidget(tickDelaySlider);
 
-		doneButton = ButtonWidget.builder(Text.translatable("replanter.configscreen.done"), (ButtonWidget b) -> {
-			close();
+		doneButton = Button.builder(Component.translatable("replanter.configscreen.done"), (Button b) -> {
+			onClose();
 		})
 				.size(96, 24)
-				.position((width / 2) - (96 / 2), tickDelaySlider.getY() + tickDelaySlider.getHeight() + 8)
+				.pos((width / 2) - (96 / 2), tickDelaySlider.getY() + tickDelaySlider.getHeight() + 8)
 				.build();
-		addDrawableChild(doneButton);
-		addSelectableChild(doneButton);
+		addRenderableWidget(doneButton);
+		addWidget(doneButton);
 	}
 
-	public static class SimpleSlider extends SliderWidget {
+	public static class SimpleSlider extends AbstractSliderButton {
 		long min, max;
 		long iValue;
 		public Consumer<Long> onValue;
 
 		public SimpleSlider(long min, long max) {
-			super(0, 0, 0, 0, Text.empty(), 0);
+			super(0, 0, 0, 0, Component.empty(), 0);
 			this.min = min;
 			this.max = max;
 			updateMessage();
@@ -183,29 +177,29 @@ public class ConfigScreen extends Screen {
 
 		@Override
 		protected void updateMessage() {
-			setMessage(Text.literal(iValue + " / " + max));
+			setMessage(Component.literal(iValue + " / " + max));
 		}
 	}
 
-	public class SwitchButton extends PressableWidget {
+	public class SwitchButton extends AbstractButton {
 		public boolean toggled = false;
 
 		public SwitchButton(int i, int j, int k, int l, boolean _toggled) {
-			super(i, j, k, l, Text.empty());
+			super(i, j, k, l, Component.empty());
 			toggled = _toggled;
 		}
 
 		@Override
-		protected void drawIcon(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-			drawButton(context);
-			context.drawCenteredTextWithShadow(textRenderer,
-					net.minecraft.text.Text.translatable("replanter.switchbutton.label." + (toggled ? "on" : "off")),
-					getX() + (width / 2), getY() + (height / 2) - (textRenderer.fontHeight / 2),
+		protected void extractContents(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+			extractDefaultSprite(context);
+			context.centeredText(font,
+					net.minecraft.network.chat.Component.translatable("replanter.switchbutton.label." + (toggled ? "on" : "off")),
+					getX() + (width / 2), getY() + (height / 2) - (font.lineHeight / 2),
 					toggled ? 0xff00ff00 : 0xffff0000);
 		}
 
 		@Override
-		public void onPress(AbstractInput input) {
+		public void onPress(InputWithModifiers input) {
 			setToggled(!toggled);
 		}
 
@@ -214,13 +208,13 @@ public class ConfigScreen extends Screen {
 		}
 
 		@Override
-		protected void appendClickableNarrations(NarrationMessageBuilder builder) {
+		protected void updateWidgetNarration(NarrationElementOutput builder) {
 		}
 	}
 
 	@Override
-	public void close() {
-		client.setScreen(parent);
+	public void onClose() {
+		minecraft.getInstance().setScreenAndShow(parent);
 		ReplanterPlus.saveConfig();
 	}
 }

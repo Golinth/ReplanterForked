@@ -1,16 +1,16 @@
 {
 	"schemaVersion": 1,
-	"id": "replanter-plus",
+	"id": "replanterforked",
 	"version": "${version}",
-	"name": "Replanter Plus",
+	"name": "Replanter Forked",
 	"description": "Client-side mod for harvesting and replanting crops by holding right click.",
 	"authors": [
-		"Ryhon"
+		"Ryhon",
+		"Golinth"
 	],
 	"contact": {
-		"homepage": "https://ryhon.xyz/",
-		"sources": "https://github.com/Ryhon0/ReplanterPlus",
-		"issues": "https://github.com/Ryhon0/ReplanterPlus/issues"
+		"sources": "https://github.com/Golinth/ReplanterForked",
+		"issues": "https://github.com/Golinth/ReplanterForked/issues"
 	},
 	"license": "GPL-3.0",
 	"icon": "assets/replanter-plus/icon.png",
@@ -26,8 +26,8 @@
 	"accessWidener": "replanter.accesswidener",
 	"depends": {
 		"fabricloader": "*",
-		"minecraft": "~1.21",
-		"java": ">=21",
+		"minecraft": "~26.2",
+		"java": ">=26",
 		"fabric-api": "*"
 	},
 	"suggests": {
@@ -39,10 +39,8 @@
 		{
 			"links":
 			{
-				"modmenu.donate": "https://github.com/sponsors/Ryhon0",
-				"modmenu.modrinth": "https://modrinth.com/mod/replanter-plus",
-				"modmenu.github_releases": "https://github.com/Ryhon0/ReplanterPlus/releases",
-				"modmenu.twitter": "https://twitter.com/RyhonDev"
+				"modmenu.modrinth": "https://modrinth.com/mod/replanterforked",
+				"modmenu.github_releases": "https://github.com/Golinth/ReplanterForked/releases"
 			}
 		}
 	}

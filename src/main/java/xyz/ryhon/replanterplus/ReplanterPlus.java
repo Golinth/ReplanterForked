@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,42 +13,47 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.block.*;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.option.KeyBinding.Category;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+//import net.minecraft.block.*;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.KeyMapping.Category;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CocoaBlock;
+import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.NetherWartBlock;
+import net.minecraft.world.level.block.PitcherCropBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 
 public class ReplanterPlus implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger("Replanter");
-	private static final MinecraftClient mc = MinecraftClient.getInstance();
+	private static final Minecraft mc = Minecraft.getInstance();
 	static Boolean useIgnore = false;
 
 	public static Boolean enabled = true;
@@ -64,13 +70,13 @@ public class ReplanterPlus implements ModInitializer {
 	public void onInitialize() {
 		loadConfig();
 
-		Category bindCategory = Category.create(Identifier.of("replanter", "replanter"));
-		KeyBinding menuBind = new KeyBinding("key.replanter.menu", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN,
+		Category bindCategory = Category.register(Identifier.fromNamespaceAndPath("replanter", "replanter"));
+		KeyMapping menuBind = new KeyMapping("key.replanter.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN,
 				bindCategory);
-		KeyBindingHelper.registerKeyBinding(menuBind);
-		KeyBinding toggleBind = new KeyBinding("key.replanter.toggle", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN,
+		KeyMappingHelper.registerKeyMapping(menuBind);
+		KeyMapping toggleBind = new KeyMapping("key.replanter.toggle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN,
 				bindCategory);
-		KeyBindingHelper.registerKeyBinding(toggleBind);
+		KeyMappingHelper.registerKeyMapping(toggleBind);
 
 		ClientTickEvents.END_CLIENT_TICK.register((client) -> {
 			ticks++;
@@ -79,71 +85,71 @@ public class ReplanterPlus implements ModInitializer {
 				saveConfig();
 			}
 
-			if (menuBind.wasPressed())
-				client.setScreen(new ConfigScreen(null));
+			if (menuBind.consumeClick())
+				client.setScreenAndShow(new ConfigScreen(null));
 
-			if (toggleBind.wasPressed())
+			if (toggleBind.consumeClick())
 				enabled = !enabled;
 		});
 
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-			if (player instanceof ServerPlayerEntity || useIgnore)
-				return ActionResult.PASS;
+			if (player instanceof ServerPlayer || useIgnore)
+				return InteractionResult.PASS;
 
-			if (!enabled || (sneakToggle && player.isSneaking()))
-				return ActionResult.PASS;
+			if (!enabled || (sneakToggle && player.isShiftKeyDown()))
+				return InteractionResult.PASS;
 
-			ClientPlayerEntity p = (ClientPlayerEntity) player;
+			LocalPlayer p = (LocalPlayer) player;
 			BlockState state = world.getBlockState(hitResult.getBlockPos());
 
 			if (state.getBlock() instanceof CocoaBlock cb) {
-				if (!cb.isFertilizable(world, hitResult.getBlockPos(), state)) {
+				if (!cb.isValidBonemealTarget(world, hitResult.getBlockPos(), state)) {
 					breakAndReplantCocoa(p, state, hitResult);
-					return ActionResult.SUCCESS;
+					return InteractionResult.SUCCESS;
 				} else {
-					Hand h = findAndEquipSeed(player, Items.BONE_MEAL);
+					InteractionHand h = findAndEquipSeed(player, Items.BONE_MEAL);
 					if (h != null) {
 						useIgnore = true;
-						mc.interactionManager.interactBlock(p, h, hitResult);
+						mc.gameMode.useItemOn(p, h, hitResult);
 						useIgnore = false;
-						return ActionResult.SUCCESS;
+						return InteractionResult.SUCCESS;
 					}
 				}
 			} else if (isCrop(state)) {
 				if (isGrown(state)) {
 					breakAndReplant(p, hitResult);
-					return ActionResult.SUCCESS;
+					return InteractionResult.SUCCESS;
 				} else {
-					Hand h = findAndEquipSeed(player, Items.BONE_MEAL);
+					InteractionHand h = findAndEquipSeed(player, Items.BONE_MEAL);
 					if (h != null) {
 						useIgnore = true;
-						mc.interactionManager.interactBlock(p, h, hitResult);
+						mc.gameMode.useItemOn(p, h, hitResult);
 						useIgnore = false;
-						return ActionResult.SUCCESS;
+						return InteractionResult.SUCCESS;
 					}
 				}
 			}
 
-			return ActionResult.PASS;
+			return InteractionResult.PASS;
 		});
 	}
 
-	Boolean findInstamineTool(ClientPlayerEntity p, BlockState state, BlockPos pos) {
-		if (state.calcBlockBreakingDelta(p, p.getEntityWorld(), pos) >= 1f)
+	Boolean findInstamineTool(LocalPlayer p, BlockState state, BlockPos pos) {
+		if (state.getDestroyProgress(p, p.level(), pos) >= 1f)
 			return true;
 
 		if (!autoSwitch)
 			return false;
 
-		int currentSlot = p.getInventory().selectedSlot;
-		for (int i = 0; i < PlayerInventory.getHotbarSize(); i++) {
-			p.getInventory().selectedSlot = i;
-			if (state.calcBlockBreakingDelta(p, p.getEntityWorld(), pos) >= 1f) {
-				mc.interactionManager.syncSelectedSlot();
+		int currentSlot = p.getInventory().getSelectedSlot();
+		for (int i = 0; i < Inventory.getSelectionSize(); i++) {
+			p.getInventory().setSelectedSlot(i);
+			if (state.getDestroyProgress(p, p.level(), pos) >= 1f) {
+				mc.gameMode.ensureHasSentCarriedItem();
 				return true;
 			}
 		}
-		p.getInventory().selectedSlot = currentSlot;
+		p.getInventory().setSelectedSlot(currentSlot);
 
 		return false;
 	}
@@ -155,7 +161,7 @@ public class ReplanterPlus implements ModInitializer {
 		else if (block instanceof NetherWartBlock)
 			return true;
 		else if (block instanceof PitcherCropBlock)
-			return PitcherCropBlock.isLowerHalf(state);
+			return PitcherCropBlock.isLower(state);
 		else if (block == Blocks.TORCHFLOWER || block == Blocks.TORCHFLOWER_CROP)
 			return true;
 
@@ -165,68 +171,68 @@ public class ReplanterPlus implements ModInitializer {
 	Boolean isGrown(BlockState state) {
 		Block block = state.getBlock();
 		if (block instanceof CropBlock crop)
-			return crop.isMature(state);
+			return crop.isMaxAge(state);
 		else if (block instanceof NetherWartBlock)
-			return (Integer) state.get(NetherWartBlock.AGE) == 3;
+			return (Integer) state.getValue(NetherWartBlock.AGE) == 3;
 		else if (block instanceof PitcherCropBlock pcb)
 			// Interacting with upper half will reject the use packet
 			// because it's too far away
-			return pcb.isFullyGrown(state) && PitcherCropBlock.isLowerHalf(state);
+			return pcb.isMaxAge(state) && PitcherCropBlock.isLower(state);
 		if (block == Blocks.TORCHFLOWER)
 			return true;
 
 		return false;
 	}
 
-	void breakAndReplant(ClientPlayerEntity player, BlockHitResult hit) {
-		Item seed = getSeed(player.getEntityWorld().getBlockState(hit.getBlockPos()).getBlock());
-		Hand h = findAndEquipSeed(player, seed);
+	void breakAndReplant(LocalPlayer player, BlockHitResult hit) {
+		Item seed = getSeed(player.level().getBlockState(hit.getBlockPos()).getBlock());
+		InteractionHand h = findAndEquipSeed(player, seed);
 		if (requireSeedHeld && h == null) {
 			sendMissingItemMessage(player, seed);
 			return;
 		}
 
 		holdFortuneItem(player);
-		mc.interactionManager.attackBlock(hit.getBlockPos(), hit.getSide());
+		mc.gameMode.startDestroyBlock(hit.getBlockPos(), hit.getDirection());
 
 		if (h != null) {
 			useIgnore = true;
-			mc.interactionManager.interactBlock(player, h, hit.withBlockPos(
+			mc.gameMode.useItemOn(player, h, hit.withPosition(
 					hit.getBlockPos()));
 			useIgnore = false;
 		} else
 			sendMissingItemMessage(player, seed);
-		mc.itemUseCooldown = useDelay;
+		//mc.rightClickDelay = useDelay;
 	}
 
-	void breakAndReplantCocoa(ClientPlayerEntity p, BlockState state, BlockHitResult hitResult) {
+	void breakAndReplantCocoa(LocalPlayer p, BlockState state, BlockHitResult hitResult) {
 		if (findInstamineTool(p, state, hitResult.getBlockPos())) {
 			Item seed = state.getBlock().asItem();
-			Hand h = findAndEquipSeed(p, seed);
+			InteractionHand h = findAndEquipSeed(p, seed);
 
 			if (requireSeedHeld && h == null) {
 				sendMissingItemMessage(p, seed);
 				return;
 			}
 
-			mc.interactionManager.attackBlock(hitResult.getBlockPos(), hitResult.getSide());
+			mc.gameMode.startDestroyBlock(hitResult.getBlockPos(), hitResult.getDirection());
 			if (h != null) {
-				Direction dir = (Direction) state.get(CocoaBlock.FACING);
+				Direction dir = (Direction) state.getValue(CocoaBlock.FACING);
 
 				float x, y, z;
-				x = dir.getOffsetX();
-				y = dir.getOffsetY();
-				z = dir.getOffsetZ();
-				BlockHitResult placeHit = BlockHitResult.createMissed(
-						hitResult.getPos().add(x, y, z), dir.getOpposite(),
-						hitResult.getBlockPos().add(dir.getVector()));
+				x = dir.getStepX();
+				y = dir.getStepY();
+				z = dir.getStepZ();
+				BlockHitResult placeHit = BlockHitResult.miss(
+						hitResult.getLocation().add(x, y, z), dir.getOpposite(),
+						hitResult.getBlockPos().offset(dir.getUnitVec3i()));
 
 				useIgnore = true;
-				mc.interactionManager.interactBlock(p, h, placeHit);
+				mc.gameMode.useItemOn(p, h, placeHit);
 				useIgnore = false;
 			} else
 				sendMissingItemMessage(p, seed);
-			mc.itemUseCooldown = useDelay;
+			//mc.rightClickDelay = useDelay;
 		}
 	}
 
@@ -244,47 +250,47 @@ public class ReplanterPlus implements ModInitializer {
 		return null;
 	}
 
-	Hand findAndEquipSeed(PlayerEntity p, Item item) {
+	InteractionHand findAndEquipSeed(Player p, Item item) {
 		if (item == null)
 			return null;
 
-		PlayerInventory pi = p.getInventory();
-		if (pi.getStack(pi.selectedSlot).isOf(item))
-			return Hand.MAIN_HAND;
-		if (pi.getStack(PlayerInventory.OFF_HAND_SLOT).isOf(item))
-			return Hand.OFF_HAND;
+		Inventory pi = p.getInventory();
+		if (pi.getItem(pi.getSelectedSlot()).is(item))
+			return InteractionHand.MAIN_HAND;
+		if (pi.getItem(Inventory.SLOT_OFFHAND).is(item))
+			return InteractionHand.OFF_HAND;
 
 		if (!autoSwitch)
 			return null;
 
-		for (int i = 0; i < PlayerInventory.getHotbarSize(); i++) {
-			if (pi.getStack(i).isOf(item)) {
-				pi.selectedSlot = i;
-				mc.interactionManager.syncSelectedSlot();
-				mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(
-						PlayerActionC2SPacket.Action.SWAP_ITEM_WITH_OFFHAND, BlockPos.ORIGIN, Direction.DOWN));
-				return Hand.OFF_HAND;
+		for (int i = 0; i < Inventory.getSelectionSize(); i++) {
+			if (pi.getItem(i).is(item)) {
+				pi.setSelectedSlot(i);
+				mc.gameMode.ensureHasSentCarriedItem();
+				mc.getConnection().send(new ServerboundPlayerActionPacket(
+						ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND, BlockPos.ZERO, Direction.DOWN));
+				return InteractionHand.OFF_HAND;
 			}
 		}
 		return null;
 	}
 
-	void holdFortuneItem(PlayerEntity p) {
+	void holdFortuneItem(Player p) {
 		if(!autoSwitch)
 			return;
 
 		int maxLevel = 0;
 		int slot = -1;
 
-		PlayerInventory pi = p.getInventory();
-		Registry<Enchantment> enchantRegistry = p.getEntityWorld().getRegistryManager().getOptional(RegistryKeys.ENCHANTMENT).get();
-		Optional<RegistryEntry.Reference<Enchantment>> fortune = enchantRegistry.getEntry(Enchantments.FORTUNE.getValue());
+		Inventory pi = p.getInventory();
+		Registry<Enchantment> enchantRegistry = p.level().registryAccess().lookup(Registries.ENCHANTMENT).get();
+		Optional<Holder.Reference<Enchantment>> fortune = enchantRegistry.get(Enchantments.FORTUNE.identifier());
 		// Server removed the Fortune enchantment????
 		if (!fortune.isPresent())
 			return;
 
-		for (int i = 0; i < PlayerInventory.getHotbarSize(); i++) {
-			int lvl = EnchantmentHelper.getLevel(fortune.get(), pi.getStack(i));
+		for (int i = 0; i < Inventory.getSelectionSize(); i++) {
+			int lvl = EnchantmentHelper.getItemEnchantmentLevel(fortune.get(), pi.getItem(i));
 			if (lvl > maxLevel) {
 				maxLevel = lvl;
 				slot = i;
@@ -292,19 +298,18 @@ public class ReplanterPlus implements ModInitializer {
 		}
 
 		if (slot != -1) {
-			pi.selectedSlot = slot;
-			mc.interactionManager.syncSelectedSlot();
+			pi.setSelectedSlot(slot);
+			mc.gameMode.ensureHasSentCarriedItem();
 		}
 	}
 
-	void sendMissingItemMessage(PlayerEntity player, Item seed) {
+	void sendMissingItemMessage(Player player, Item seed) {
 		if (missingItemNotifications)
-			player.sendMessage(
-					Text.translatable(seed.getTranslationKey())
-							.append(Text.translatable(
+			player.sendSystemMessage(
+					Component.translatable(seed.getDescriptionId())
+							.append(Component.translatable(
 									autoSwitch ? "replanter.gui.seed_not_in_hotbar" : "replanter.gui.seed_not_in_hand"))
-							.setStyle(Style.EMPTY.withColor(0xFF0000)),
-					true);
+							.setStyle(Style.EMPTY.withColor(0xFF0000)));
 	}
 
 	static Path configDir = FabricLoader.getInstance().getConfigDir().resolve("replanterplus");
