@@ -14,12 +14,12 @@ base {
 
 modrinth {
     token = System.getenv("MODRINTH_TOKEN")
-    projectId = "replanter-plus"
+    projectId = "replanter-forked"
     versionNumber = project.mod_version + "-" + project.minecraft_version
     versionType = "release"
     uploadFile = jar
     gameVersions = [project.minecraft_version]
-    loaders = ["fabric", "quilt"]
+    loaders = ["fabric"]
     dependencies {
         required.project "fabric-api"
         optional.project "modmenu"
@@ -54,7 +54,7 @@ loom {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 26
+	it.options.release = 25
 }
 
 java {
@@ -63,8 +63,8 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_26
-	targetCompatibility = JavaVersion.VERSION_26
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
 }
 
 jar {
