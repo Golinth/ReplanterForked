@@ -26,7 +26,7 @@
 	"accessWidener": "replanter.accesswidener",
 	"depends": {
 		"fabricloader": "*",
-		"minecraft": "~26.2",
+		"minecraft": "~26.3",
 		"java": ">=25",
 		"fabric-api": "*"
 	},

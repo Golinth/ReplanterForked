@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLScancode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +18,6 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.loader.api.FabricLoader;
-//import net.minecraft.block.*;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.KeyMapping.Category;
 import net.minecraft.client.Minecraft;
@@ -44,6 +43,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.BonemealSource;
 import net.minecraft.world.level.block.CocoaBlock;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.NetherWartBlock;
@@ -71,10 +71,10 @@ public class ReplanterPlus implements ModInitializer {
 		loadConfig();
 
 		Category bindCategory = Category.register(Identifier.fromNamespaceAndPath("replanter", "replanter"));
-		KeyMapping menuBind = new KeyMapping("key.replanter.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN,
+		KeyMapping menuBind = new KeyMapping("key.replanter.menu", InputConstants.Type.KEYBOARD, SDLScancode.SDL_SCANCODE_UNKNOWN,
 				bindCategory);
 		KeyMappingHelper.registerKeyMapping(menuBind);
-		KeyMapping toggleBind = new KeyMapping("key.replanter.toggle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN,
+		KeyMapping toggleBind = new KeyMapping("key.replanter.toggle", InputConstants.Type.KEYBOARD, SDLScancode.SDL_SCANCODE_UNKNOWN,
 				bindCategory);
 		KeyMappingHelper.registerKeyMapping(toggleBind);
 
@@ -103,7 +103,7 @@ public class ReplanterPlus implements ModInitializer {
 			BlockState state = world.getBlockState(hitResult.getBlockPos());
 
 			if (state.getBlock() instanceof CocoaBlock cb) {
-				if (!cb.isValidBonemealTarget(world, hitResult.getBlockPos(), state)) {
+				if (!cb.isValidBonemealTarget(world, hitResult.getBlockPos(), state, BonemealSource.INTERACTION)) {
 					breakAndReplantCocoa(p, state, hitResult);
 					return InteractionResult.SUCCESS;
 				} else {
