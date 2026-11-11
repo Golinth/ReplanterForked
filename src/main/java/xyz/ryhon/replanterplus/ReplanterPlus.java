@@ -71,10 +71,10 @@ public class ReplanterPlus implements ModInitializer {
 		loadConfig();
 
 		Category bindCategory = Category.register(Identifier.fromNamespaceAndPath("replanter", "replanter"));
-		KeyMapping menuBind = new KeyMapping("key.replanter.menu", InputConstants.Type.KEYBOARD, SDLScancode.SDL_SCANCODE_UNKNOWN,
+		KeyMapping menuBind = new KeyMapping("key.replanter.menu", InputConstants.Type.KEYBOARD, 0,
 				bindCategory);
 		KeyMappingHelper.registerKeyMapping(menuBind);
-		KeyMapping toggleBind = new KeyMapping("key.replanter.toggle", InputConstants.Type.KEYBOARD, SDLScancode.SDL_SCANCODE_UNKNOWN,
+		KeyMapping toggleBind = new KeyMapping("key.replanter.toggle", InputConstants.Type.KEYBOARD, 0,
 				bindCategory);
 		KeyMappingHelper.registerKeyMapping(toggleBind);
 
@@ -202,7 +202,7 @@ public class ReplanterPlus implements ModInitializer {
 			useIgnore = false;
 		} else
 			sendMissingItemMessage(player, seed);
-		//mc.rightClickDelay = useDelay;
+		mc.rightClickDelay = useDelay;
 	}
 
 	void breakAndReplantCocoa(LocalPlayer p, BlockState state, BlockHitResult hitResult) {
